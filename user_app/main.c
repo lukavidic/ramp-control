@@ -18,13 +18,13 @@ const int YELLOW_SLEEP = 2;
 const int GREEN_SLEEP = 4;  
 
 int send_to_drivers(const char* msg){
-    int led_fd = open(LED_DRIVER, O_WR);
+    int led_fd = open(LED_DRIVER, O_RDWR);
     if(led_fd < 0){
         printf("Error, %s not opened\n", LED_DRIVER);
         return -1;
     }
     write(led_fd, msg, BUF_LEN);
-    close(file_desc);
+    close(led_fd);
     return 0;
 }
 
