@@ -11,7 +11,7 @@
 const char* RED = "RED";
 const char* YELLOW = "YELLOW";
 const char* GREEN = "GREEN";
-const char* LED_DRIVER = "led_driver";
+const char* LED_DRIVER = "/dev/led_driver";
 
 const int RED_SLEEP = 5; 
 const int YELLOW_SLEEP = 2;
