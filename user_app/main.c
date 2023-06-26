@@ -33,9 +33,9 @@ int send_to_drivers(const char* msg){
     }
     write(led_fd, msg, BUF_LEN);
     close(led_fd);
-    if(strcmp(RED,msg))
+    if(strcmp(RED,msg) == 0)
         write(pwm_fd, MOV_DOWN, strlen(MOV_DOWN));
-    else if(strcmp(GREEN,msg))
+    else if(strcmp(GREEN,msg) == 0)
         write(pwm_fd, MOV_UP, strlen(MOV_UP));
     close(pwm_fd);
     return 0;
