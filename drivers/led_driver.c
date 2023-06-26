@@ -431,9 +431,9 @@ int gpio_driver_init(void)
 
     /* Initialize GPIO pins. */
     /* LEDS */
-    SetGpioPinDirection(GPIO_16, GPIO_DIRECTION_OUT);
-    SetGpioPinDirection(GPIO_20, GPIO_DIRECTION_OUT);
-    SetGpioPinDirection(GPIO_21, GPIO_DIRECTION_OUT);
+    SetGpioPinDirection(GPIO_05, GPIO_DIRECTION_OUT);
+    SetGpioPinDirection(GPIO_06, GPIO_DIRECTION_OUT);
+    SetGpioPinDirection(GPIO_26, GPIO_DIRECTION_OUT);
 
     return 0;
 
@@ -463,9 +463,9 @@ void gpio_driver_exit(void)
     printk(KERN_INFO "Removing led_driver module\n");
 
     /* Clear GPIO pins. */
-    ClearGpioPin(GPIO_16);
-    ClearGpioPin(GPIO_20);
-    ClearGpioPin(GPIO_21);
+    ClearGpioPin(GPIO_05);
+    ClearGpioPin(GPIO_06);
+    ClearGpioPin(GPIO_26);
 
     /* Unmap GPIO Physical address space. */
     if (virt_gpio_base)
@@ -560,24 +560,28 @@ static ssize_t gpio_driver_write(struct file *filp, const char *buf, size_t len,
     else
     {
         if(strcmp(RED,led_buff) == 0){
-            SetGpioPin(GPIO_16);
-            ClearGpioPin(GPIO_20);
-            ClearGpioPin(GPIO_21);
+            printk(KERN_INFO "Red light on\n");
+            SetGpioPin(GPIO_05);
+            ClearGpioPin(GPIO_06);
+            ClearGpioPin(GPIO_26);
         }
         else if(strcmp(YELLOW,led_buff)){
-            ClearGpioPin(GPIO_16);
-            SetGpioPin(GPIO_20);
-            ClearGpioPin(GPIO_21);
+            printk(KERN_INFO "Yellow light on\n");
+            ClearGpioPin(GPIO_05);
+            SetGpioPin(GPIO_06);
+            ClearGpioPin(GPIO_26);
         }
         else if(strcmp(GREEN, led_buff)){
-            ClearGpioPin(GPIO_16);
-            ClearGpioPin(GPIO_20);
-            SetGpioPin(GPIO_21);
+            printk(KERN_INFO "Green light on\n");
+            ClearGpioPin(GPIO_05);
+            ClearGpioPin(GPIO_06);
+            SetGpioPin(GPIO_26);
         }
         else{
-            ClearGpioPin(GPIO_16);
-            ClearGpioPin(GPIO_20);
-            ClearGpioPin(GPIO_21);
+            printk(KERN_INFO "Lights off\n");
+            ClearGpioPin(GPIO_05);
+            ClearGpioPin(GPIO_06);
+            ClearGpioPin(GPIO_26);
         }
         return len;
     }

@@ -21,8 +21,8 @@ const int YELLOW_SLEEP = 2;
 const int GREEN_SLEEP = 4;  
 
 int send_to_drivers(const char* msg){
-    int led_fd = open(LED_DRIVER, O_WRONLY);
-    int pwm_fd = open(PWM_DRIVER, O_WRONLY)
+    int led_fd = open(LED_DRIVER, O_RDWR);
+    int pwm_fd = open(PWM_DRIVER, O_RDWR);
     if(led_fd < 0){
         printf("ERROR: %s not opened\n", LED_DRIVER);
         return -1;
@@ -37,6 +37,7 @@ int send_to_drivers(const char* msg){
         write(pwm_fd, MOV_DOWN, strlen(MOV_DOWN));
     else if(strcmp(GREEN,msg))
         write(pwm_fd, MOV_UP, strlen(MOV_UP));
+    close(pwm_fd);
     return 0;
 }
 
