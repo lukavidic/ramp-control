@@ -565,13 +565,13 @@ static ssize_t gpio_driver_write(struct file *filp, const char *buf, size_t len,
             ClearGpioPin(GPIO_06);
             ClearGpioPin(GPIO_26);
         }
-        else if(strcmp(YELLOW,led_buff)){
+        else if(strcmp(YELLOW,led_buff) == 0){
             printk(KERN_INFO "Yellow light on\n");
             ClearGpioPin(GPIO_05);
             SetGpioPin(GPIO_06);
             ClearGpioPin(GPIO_26);
         }
-        else if(strcmp(GREEN, led_buff)){
+        else if(strcmp(GREEN, led_buff) == 0){
             printk(KERN_INFO "Green light on\n");
             ClearGpioPin(GPIO_05);
             ClearGpioPin(GPIO_06);
