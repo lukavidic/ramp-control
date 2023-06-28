@@ -30,13 +30,13 @@ MODULE_DESCRIPTION("ADC Driver");
 **      len  -> Length of the data
 **   
 */
-static int I2C_Write()
+static int I2C_Write(void)
 {
     /*
     ** Sending Start condition, Slave address with R/W bit, 
     ** ACK/NACK and Stop condtions will be handled internally.
     */ 
-    int ret = i2c_master_send(etx_i2c_client_adc, INIT_MSG, 2);
+    int ret = i2c_master_send(etx_i2c_client_adc, &INIT_MSG, 1);
     
     return ret;
 }
@@ -49,7 +49,7 @@ static int I2C_Write()
 **      len      -> Length of the data to be read
 ** 
 */
-static int I2C_Read()
+static int I2C_Read(void)
 {
     /*
     ** Sending Start condition, Slave address with R/W bit, 
@@ -77,7 +77,7 @@ static int etx_adc_probe(struct i2c_client *client,
 */
 static int etx_adc_remove(struct i2c_client *client)
 {   
-    int ret = i2c_master_send(etx_i2c_client_adc, &EXIT_MSG, 1);
+    i2c_master_send(etx_i2c_client_adc, &EXIT_MSG, 1);
 
     pr_info("ADC Removed!!!\n");
     return 0;
@@ -125,16 +125,7 @@ static ssize_t adc_driver_read(struct file *filp, char *buf, size_t len, loff_t 
 
 static ssize_t adc_driver_write(struct file *filp, const char *buf, size_t len, loff_t *f_pos)
 {
-
-    /* Get data from user space.*/
-    if (copy_from_user(led_buff, buf, len) != 0)
-    {
-        return -EFAULT;
-    }
-    else
-    {
-        return 0;
-    }
+    return 0;
 }
 
 /*
@@ -164,7 +155,7 @@ static struct i2c_driver etx_adc_driver = {
 
 static struct file_operations adc_fops = {
 	.open = adc_driver_open,
-	.release = adc_driver_close,
+	.release = adc_driver_release,
 	.write = adc_driver_write,
     .read = adc_driver_read
 };
