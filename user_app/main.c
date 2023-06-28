@@ -5,63 +5,120 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
 
 #define BUF_LEN 10
+
+static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
 const char* RED = "RED";
 const char* YELLOW = "YELLOW";
 const char* GREEN = "GREEN";
-const char* MOV_UP = "b";
+const char* MOV_UP = "b"; // SAME FOR BUZZER TO BUZZ
 const char* MOV_DOWN = "e";
 const char* LED_DRIVER = "/dev/led_driver";
 const char* PWM_DRIVER = "/dev/pwm_driver";
+const char* BUZZ_DRIVER = "/dev/buzz_driver";
+const char* ADC_DRIVER = "/dev/adc_driver";
 
 const int RED_SLEEP = 5; 
 const int YELLOW_SLEEP = 2;
 const int GREEN_SLEEP = 4;  
 
-int send_to_drivers(const char* msg){
-    int led_fd = open(LED_DRIVER, O_RDWR);
-    int pwm_fd = open(PWM_DRIVER, O_RDWR);
-    if(led_fd < 0){
-        printf("ERROR: %s not opened\n", LED_DRIVER);
-        return -1;
+int led_fd, pwm_fd, buzz_fd, adc_fd;
+char flag = 0x00;
+
+void kill_handler(int signo, siginfo_t *info, void *context){
+    if(signo==SIGINT){
+        close(led_fd);
+        close(pwm_fd);
+        close(buzz_fd);
+        close(adc_fd);
+        exit(1);
     }
-    if(pwm_fd < 0){
-        printf("ERROR: %s not opened\n", PWM_DRIVER);
+}
+
+void send_to_drivers(const char* msg){
+    pthread_mutex_lock(&mtx);
+        if(flag > 0)
+            return;
+        write(led_fd, msg, BUF_LEN);
+        if(strcmp(RED,msg) == 0)
+            write(pwm_fd, MOV_DOWN, strlen(MOV_DOWN));
+        else if(strcmp(GREEN,msg) == 0)
+            write(pwm_fd, MOV_UP, strlen(MOV_UP));
+    pthread_mutex_unlock(&mtx);
+    return;
+}
+
+int open_drivers(void){
+    led_fd = open(LED_DRIVER, O_RDWR);
+    pwm_fd = open(PWM_DRIVER, O_RDWR);
+    buzz_fd = open(BUZZ_DRIVER, O_RDWR);
+    adc_fd = open(ADC_DRIVER, O_RDWR);
+    if(led_fd < 0 || pwm_fd < 0 || buzz_fd < 0 || adc_fd < 0)
         return -1;
-    }
-    write(led_fd, msg, BUF_LEN);
-    close(led_fd);
-    if(strcmp(RED,msg) == 0)
-        write(pwm_fd, MOV_DOWN, strlen(MOV_DOWN));
-    else if(strcmp(GREEN,msg) == 0)
-        write(pwm_fd, MOV_UP, strlen(MOV_UP));
-    close(pwm_fd);
     return 0;
 }
 
+void* sensor_controller_fun(void* param){
+    char data[2];
+    char thrs = 0x07;
+    while(1){
+        read(adc_fd, data, 2);
+        if(data[0] > thrs){
+            pthread_mutex_lock(&mtx);
+                write(pwm_fd, MOV_UP, strlen(MOV_UP));
+                write(buzz_fd, MOV_UP, strlen(MOV_UP));
+                write(led_fd, "", 1);
+                flag = 1;
+                sleep(RED_SLEEP); // Sleep for same as red light
+            pthread_mutex_unlock(&mtx);
+        }
+    }
+}
+
+
 int main()
 {
+    pthread_t sensor_controller_th;
+    struct sigaction act;
+    memset(&act,0,sizeof(act));
+    act.sa_sigaction=kill_handler;
+    act.sa_flags=SA_SIGINFO;
+    sigaction(SIGINT,&act,NULL);
+
+    if(open_drivers() < 0){
+        perror("FATAL ERROR: Failed opening device files !!\n");
+        return -1;
+    }
+
+    pthread_create(&sensor_controller_th, NULL, sensor_controller_fun, NULL);
+
     while(1){
-        if(send_to_drivers(RED) == -1){
-            perror("FATAL ERROR: Failed writing to drivers");
-            return -1;
+        goback:
+        send_to_drivers(RED);
+        if(flag > 0){
+            flag = 0;
+            goto goback;
         }
         sleep(RED_SLEEP);
-        if(send_to_drivers(YELLOW) == -1){
-            perror("FATAL ERROR: Failed writing to drivers");
-            return -1;
+        send_to_drivers(YELLOW);
+        if(flag > 0){
+            flag = 0;
+            goto goback;
         }
         sleep(YELLOW_SLEEP);
-        if(send_to_drivers(GREEN) == -1){
-            perror("FATAL ERROR: Failed writing to drivers");
-            return -1;
+        send_to_drivers(GREEN);
+        if(flag > 0){
+            flag = 0;
+            goto goback;
         }
         sleep(GREEN_SLEEP);
-        if(send_to_drivers(YELLOW) == -1){
-            perror("FATAL ERROR: Failed writing to drivers");
-            return -1;
+        send_to_drivers(YELLOW);
+        if(flag > 0){
+            flag = 0;
+            goto goback;
         }
         sleep(YELLOW_SLEEP);
     }
