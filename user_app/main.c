@@ -7,7 +7,7 @@
 #include <pthread.h>
 #include <signal.h>
 
-#define BUF_LEN 10 /* Char buffer length holding messages for LED drvier*/
+#define BUF_LEN 10 /* Char buffer length holding messages for LED drvier */
 
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER; /* Mutex controlling servo movement critical section */
 
