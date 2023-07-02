@@ -12,10 +12,10 @@
 
 static struct i2c_adapter *etx_i2c_adapter     = NULL;  // I2C Adapter Structure
 static struct i2c_client  *etx_i2c_client_adc = NULL;  // I2C Cient Structure 
-const char INIT_MSG = 0x8c;
-const char EXIT_MSG = 0x80;
-int adc_driver_major;
-char data[2];
+const char INIT_MSG = 0x8c; // Message that initiates conversion for ADC 12 Click component
+const char EXIT_MSG = 0x80; // Message that shuts down ADC 
+int adc_driver_major; // Device major number
+char data[2]; // Buffer holding read data from the ADC (sensor data)
 
 
 MODULE_LICENSE("Dual BSD/GPL");
@@ -35,9 +35,11 @@ static int I2C_Write(void)
     /*
     ** Sending Start condition, Slave address with R/W bit, 
     ** ACK/NACK and Stop condtions will be handled internally.
-    */ 
+    */
+     
     int ret = i2c_master_send(etx_i2c_client_adc, &INIT_MSG, 1);
-    
+
+    /* In our case, we just need to write INIT_MSG before every read operation, reading data from sensor is only necessary thing */
     return ret;
 }
 
@@ -56,6 +58,8 @@ static int I2C_Read(void)
     ** ACK/NACK and Stop condtions will be handled internally.
     */ 
     int ret = i2c_master_recv(etx_i2c_client_adc, data, 2);
+
+    /* Reading sensor data into the buffer, 2B of data, 4 MSBs are not used, referring to component datasheet */
     
     return ret;
 }
@@ -79,6 +83,8 @@ static int etx_adc_remove(struct i2c_client *client)
 {   
     i2c_master_send(etx_i2c_client_adc, &EXIT_MSG, 1);
 
+    /* After removing driver, just send shutdown message*/
+    
     pr_info("ADC Removed!!!\n");
     return 0;
 }
@@ -95,17 +101,18 @@ static int adc_driver_release(struct inode *inode, struct file *filp)
     return 0;
 }
 
-
+/* 
+    Function that enables reading from char device driver, only necessary function for this project purpose
+    First uses I2C_Write to initiate conversion, then reads the data and finally sends it back to user-space application
+*/
 static ssize_t adc_driver_read(struct file *filp, char *buf, size_t len, loff_t *f_pos)
 {
     int data_size = 0;
 
     if (*f_pos == 0)
     {
-        /* Get size of valid data. */
         I2C_Write();
         I2C_Read();
-        /* Send data to user space. */
         if (copy_to_user(buf, data, 2) != 0)
         {
             return -EFAULT;
@@ -123,6 +130,7 @@ static ssize_t adc_driver_read(struct file *filp, char *buf, size_t len, loff_t 
     }
 }
 
+/* Write function, not needed for the project */
 static ssize_t adc_driver_write(struct file *filp, const char *buf, size_t len, loff_t *f_pos)
 {
     return 0;
@@ -152,7 +160,6 @@ static struct i2c_driver etx_adc_driver = {
 };
 
 /* File operations struct */
-
 static struct file_operations adc_fops = {
 	.open = adc_driver_open,
 	.release = adc_driver_release,
@@ -169,6 +176,8 @@ static struct i2c_board_info adc_i2c_board_info = {
 
 /*
 ** Module Init function
+** Registers new I2C device driver for the correct adapter on the bus
+** Registers driver as a chardev for easier use in user-space using file read/write
 */
 static int __init etx_driver_init(void)
 {

@@ -41,7 +41,7 @@ static ssize_t driver_write(struct file *File, const char *user_buffer, size_t c
 
     printk("%s\n", user_buffer);
 
-    /* Set PWM on time */
+    /* Set PWM on time: a - stop buzzing ; b - start buzzing */
     if(value != 'a' && value != 'b')
         printk("Invalid Value\n");
     else
@@ -149,5 +149,3 @@ static void __exit ModuleExit(void) {
 
 module_init(ModuleInit);
 module_exit(ModuleExit);
-
-

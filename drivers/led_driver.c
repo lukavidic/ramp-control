@@ -134,6 +134,7 @@ typedef enum {GPIO_DIRECTION_IN = 0, GPIO_DIRECTION_OUT = 1} DIRECTION;
 #define GPIO_26 (26)
 #define GPIO_27 (27)
 
+/* Possible user-space messages for correspoding LEDs */
 const char* RED = "RED";
 const char* YELLOW = "YELLOW";
 const char* GREEN = "GREEN";
@@ -391,7 +392,6 @@ char GetGpioPinValue(char pin)
  *  3. Initialize buffer
  *  4. Map GPIO Physical address space to virtual address
  *  5. Initialize GPIO pins
- *  6. Init and start the high resoultion timer
  */
 int gpio_driver_init(void)
 {
@@ -452,11 +452,10 @@ fail_no_mem:
 
 /*
  * Cleanup:
- *  1. stop the timer
- *  2. release GPIO pins (clear all outputs, set all as inputs and pull-none to minimize the power consumption)
- *  3. Unmap GPIO Physical address space from virtual address
- *  4. Free buffer
- *  5. Unregister device driver
+ *  1. release GPIO pins (clear all outputs, set all as inputs and pull-none to minimize the power consumption)
+ *  2. Unmap GPIO Physical address space from virtual address
+ *  3. Free buffer
+ *  4. Unregister device driver
  */
 void gpio_driver_exit(void)
 {
@@ -497,6 +496,7 @@ static int gpio_driver_release(struct inode *inode, struct file *filp)
 }
 
 /*
+ * ~ NOT NECESSARY FOR THE WANTED USAGE ~
  * File read function
  *  Parameters:
  *   filp  - a type file structure;
@@ -559,6 +559,8 @@ static ssize_t gpio_driver_write(struct file *filp, const char *buf, size_t len,
     }
     else
     {
+        /* Turn the correct LED ON */
+
         if(strcmp(RED,led_buff) == 0){
             printk(KERN_INFO "Red light on\n");
             SetGpioPin(GPIO_05);
