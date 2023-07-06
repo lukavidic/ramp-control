@@ -49,9 +49,9 @@ void kill_handler(int signo, siginfo_t *info, void *context){
 
 /* Function that sends a message to LED driver and moves servo in correct direction depending on the message being sent */
 void send_to_drivers(const char* msg){
-    pthread_mutex_lock(&mtx);
-        if(flag > 0)
+    if(flag > 0)
             return;
+    pthread_mutex_lock(&mtx);
         write(led_fd, msg, BUF_LEN);
         if(strcmp(RED,msg) == 0)
             write(pwm_fd, MOV_DOWN, strlen(MOV_DOWN));
